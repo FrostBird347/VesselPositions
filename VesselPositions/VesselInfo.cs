@@ -5,6 +5,7 @@ namespace VesselPositions
     public class VesselInfo
     {
         public Guid vesselID;
+        public string planet;
         public double latitude;
         public double longitude;
         public double altitude;
@@ -17,9 +18,19 @@ namespace VesselPositions
             this.vesselID = vesselID;
         }
 
-        public void UpdateOrbit()
+        public void Update(double universeUT)
         {
-            landed = false;
+            if (landed)
+            {
+                //Landed vessels don't move.
+                return;
+            }
+            orbit.UpdateToUT(universeUT);
+            UpdateOrbit();
+        }
+
+        private void UpdateOrbit()
+        {
             double x = orbit.position[0];
             double y = orbit.position[1];
             double z = orbit.position[2];
@@ -34,6 +45,7 @@ namespace VesselPositions
 
         public void UpdateOrbit(Orbit orbit)
         {
+            landed = false;
             this.orbit = orbit;
             UpdateOrbit();
         }
@@ -45,6 +57,11 @@ namespace VesselPositions
             this.longitude = longitude;
             this.altitude = altitude;
             this.velocity = velocity;
+        }
+
+        public void UpdatePlanet(int id)
+        {
+            planet = PlanetInfo.GetName(id);
         }
     }
 }

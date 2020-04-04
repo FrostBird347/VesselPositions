@@ -38,7 +38,8 @@ namespace VesselPositions
                 {
                     foreach (KeyValuePair<Guid, VesselInfo> kvp in vessels)
                     {
-                        Console.WriteLine(kvp.Key + " velocity: " + kvp.Value.velocity);
+                        VesselInfo vi = kvp.Value;
+                        Console.WriteLine(kvp.Key + " velocity: " + vi.velocity + "");
                     }
                 }
             }
@@ -84,19 +85,31 @@ namespace VesselPositions
         public void UpdateVessel(ClientObject client, Guid vesselID, byte[] vesselData)
         {
             string vesselDataString = Encoding.UTF8.GetString(vesselData);
-            ConfigNode cn = ConfigNodeReader.StringToConfigNode(vesselDataString).GetNode("ORBIT");
-            double[] orbit = new double[7];
-            orbit[0] = double.Parse(cn.GetValue("INC"));
-            orbit[1] = double.Parse(cn.GetValue("ECC"));
-            orbit[2] = double.Parse(cn.GetValue("SMA"));
-            orbit[3] = double.Parse(cn.GetValue("LAN"));
-            orbit[4] = double.Parse(cn.GetValue("LPE"));
-            orbit[5] = double.Parse(cn.GetValue("MNA"));
-            orbit[6] = double.Parse(cn.GetValue("EPH"));
-            int referenceBody = Int32.Parse(cn.GetValue("REF"));
-            Orbit o = new Orbit(orbit, referenceBody);
+            ConfigNode cn = ConfigNodeReader.StringToConfigNode(vesselDataString);
+            string landed = cn.GetValue("landed");
             VesselInfo vi = GetVesselInfo(vesselID);
-            vi.UpdateOrbit(o);
+            if (landed == "True")
+            {
+                double newLat = Double.Parse(cn.GetValue("lat"));
+                double newLong = Double.Parse(cn.GetValue("lon"));
+                double newAlt = Double.Parse(cn.GetValue("alt"));
+                vi.UpdateLanded(newLat, newLong, newAlt, 0);
+            }
+            else
+            { 
+                ConfigNode cnOrbit = cn.GetNode("ORBIT");
+                double[] orbit = new double[7];
+                orbit[0] = double.Parse(cn.GetValue("INC"));
+                orbit[1] = double.Parse(cn.GetValue("ECC"));
+                orbit[2] = double.Parse(cn.GetValue("SMA"));
+                orbit[3] = double.Parse(cn.GetValue("LAN"));
+                orbit[4] = double.Parse(cn.GetValue("LPE"));
+                orbit[5] = double.Parse(cn.GetValue("MNA"));
+                orbit[6] = double.Parse(cn.GetValue("EPH"));
+                int referenceBody = Int32.Parse(cn.GetValue("REF"));
+                Orbit o = new Orbit(orbit, referenceBody);
+                vi.UpdateOrbit(o);
+            }
         }
 
         public void RemoveVessel(ClientObject client, Guid vesselID)
@@ -106,13 +119,10 @@ namespace VesselPositions
 
         public void PositionVessel(ClientObject client, VesselUpdate update)
         {
-            Console.WriteLine("Update vessel position: " + update.vesselID);
             if (update.isSurfaceUpdate)
             {
                 VesselInfo vi = GetVesselInfo(update.vesselID);
-                vi.longitude = update.position[1];
-                vi.altitude = update.position[2];
-                vi.velocity = Vector.Length(update.velocity);
+                vi.UpdateLanded(update.position[0], update.position[1], update.position[2], Vector.Length(update.velocity));
             }
             else
             {

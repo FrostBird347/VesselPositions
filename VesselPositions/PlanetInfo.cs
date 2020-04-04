@@ -142,5 +142,14 @@ namespace VesselPositions
             }
             return planetNameToInt[name];
         }
+
+        public static string GetName(int id)
+        {
+            if (!planets.ContainsKey(id))
+            {
+                return null;
+            }
+            return planets[id].name;
+        }
     }
 }
