@@ -1,16 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using DarkMultiPlayerCommon;
 using DarkMultiPlayerServer;
 using MessageStream2;
+using ConfigNodeParser;
 
 namespace VesselPositions
 {
     public class VesselPositions : DMPPlugin
     {
+        private Dictionary<Guid, VesselInfo> vessels = new Dictionary<Guid, VesselInfo>();
+        private long lastSendTime = 0;
+
         public override void OnServerStart()
         {
+            PlanetInfo.Init();
             foreach (string file in Directory.GetFiles(Path.Combine(Server.universeDirectory, "Vessels")))
             {
                 string croppedName = Path.GetFileNameWithoutExtension(file);
@@ -18,6 +24,22 @@ namespace VesselPositions
                 {
                     byte[] vesselData = File.ReadAllBytes(file);
                     UpdateVessel(null, vesselID, vesselData);
+                }
+            }
+        }
+
+        public override void OnUpdate()
+        {
+            long currentTime = DateTime.UtcNow.Ticks;
+            if (currentTime > lastSendTime + TimeSpan.TicksPerSecond)
+            {
+                lastSendTime = currentTime;
+                lock (vessels)
+                {
+                    foreach (KeyValuePair<Guid, VesselInfo> kvp in vessels)
+                    {
+                        Console.WriteLine(kvp.Key + " velocity: " + kvp.Value.velocity);
+                    }
                 }
             }
         }
@@ -61,12 +83,25 @@ namespace VesselPositions
 
         public void UpdateVessel(ClientObject client, Guid vesselID, byte[] vesselData)
         {
-            Console.WriteLine("Updated vessel data: " + vesselID);
+            string vesselDataString = Encoding.UTF8.GetString(vesselData);
+            ConfigNode cn = ConfigNodeReader.StringToConfigNode(vesselDataString).GetNode("ORBIT");
+            double[] orbit = new double[7];
+            orbit[0] = double.Parse(cn.GetValue("INC"));
+            orbit[1] = double.Parse(cn.GetValue("ECC"));
+            orbit[2] = double.Parse(cn.GetValue("SMA"));
+            orbit[3] = double.Parse(cn.GetValue("LAN"));
+            orbit[4] = double.Parse(cn.GetValue("LPE"));
+            orbit[5] = double.Parse(cn.GetValue("MNA"));
+            orbit[6] = double.Parse(cn.GetValue("EPH"));
+            int referenceBody = Int32.Parse(cn.GetValue("REF"));
+            Orbit o = new Orbit(orbit, referenceBody);
+            VesselInfo vi = GetVesselInfo(vesselID);
+            vi.UpdateOrbit(o);
         }
 
         public void RemoveVessel(ClientObject client, Guid vesselID)
         {
-            Console.WriteLine("Removing vessel data: " + vesselID);
+            RemoveVesselInfo(vesselID);
         }
 
         public void PositionVessel(ClientObject client, VesselUpdate update)
@@ -74,14 +109,45 @@ namespace VesselPositions
             Console.WriteLine("Update vessel position: " + update.vesselID);
             if (update.isSurfaceUpdate)
             {
-                //Play with
-                //update.position (Lat, long, alt);
-                //update.velocity (Surface relative speed, probably just take it's length);
+                VesselInfo vi = GetVesselInfo(update.vesselID);
+                vi.longitude = update.position[1];
+                vi.altitude = update.position[2];
+                vi.velocity = Vector.Length(update.velocity);
             }
             else
             {
-                //Play with, order is https://github.com/godarklight/DarkMultiPlayer/blob/master/Client/VesselUpdate.cs#L90-L96
-                //update.orbit;
+                VesselInfo vi = GetVesselInfo(update.vesselID);
+                int planetReference = PlanetInfo.GetReference(update.bodyName);
+                if (planetReference != -1)
+                {
+                    Orbit o = new Orbit(update.orbit, planetReference);
+                    vi.UpdateOrbit(o);
+                }
+            }
+        }
+
+        private VesselInfo GetVesselInfo(Guid vesselID)
+        {
+            lock (vessels)
+            {
+                if (vessels.ContainsKey(vesselID))
+                {
+                    return vessels[vesselID];
+                }
+                VesselInfo vi = new VesselInfo(vesselID);
+                vessels[vesselID] = vi;
+                return vi;
+            }
+        }
+
+        private void RemoveVesselInfo(Guid vesselID)
+        {
+            lock (vessels)
+            {
+                if (vessels.ContainsKey(vesselID))
+                {
+                    vessels.Remove(vesselID);
+                }
             }
         }
     }
