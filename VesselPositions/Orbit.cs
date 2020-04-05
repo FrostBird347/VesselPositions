@@ -58,15 +58,18 @@ namespace VesselPositions
             double positiveSMA = Math.Abs(semiMajorAxis);
             double meanMotion = Math.Sqrt(GM / (positiveSMA * positiveSMA * positiveSMA));
             meanAnomalyAtEpoch = meanAnomalyAtEpoch + deltaTime * meanMotion;
-            //Normalise meanAnomaly
-            meanAnomalyAtEpoch = meanAnomalyAtEpoch % Constants.TAU;
-            while (meanAnomalyAtEpoch < -Math.PI)
+            if (eccentricity < 1)
             {
-                meanAnomalyAtEpoch += Constants.TAU;
-            }
-            while (meanAnomalyAtEpoch > Math.PI)
-            {
-                meanAnomalyAtEpoch -= Constants.TAU;
+                //Normalise meanAnomaly
+                meanAnomalyAtEpoch = meanAnomalyAtEpoch % Constants.TAU;
+                while (meanAnomalyAtEpoch < -Math.PI)
+                {
+                    meanAnomalyAtEpoch += Constants.TAU;
+                }
+                while (meanAnomalyAtEpoch > Math.PI)
+                {
+                    meanAnomalyAtEpoch -= Constants.TAU;
+                }
             }
             epoch = universeTime;
             Solve();
