@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 namespace VesselPositions
 {
     public static class Vector
@@ -61,6 +62,22 @@ namespace VesselPositions
                 total += input[i] * input[i];
             }
             return Math.Sqrt(total);
+        }
+
+        public static string GetString(double[] input, int round)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("[");
+            for (int i = 0; i < input.Length; i++)
+            {
+                sb.Append(input[i].ToString("F" + round));
+                if (i != input.Length - 1)
+                {
+                    sb.Append(", ");
+                }
+            }
+            sb.Append("]");
+            return sb.ToString();
         }
     }
 }

@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using ConfigNodeParser;
 using DarkMultiPlayerCommon;
 using DarkMultiPlayerServer;
 using MessageStream2;
-using ConfigNodeParser;
 
 namespace VesselPositions
 {
@@ -13,10 +13,16 @@ namespace VesselPositions
     {
         private Dictionary<Guid, VesselInfo> vessels = new Dictionary<Guid, VesselInfo>();
         private long lastSendTime = 0;
+        private bool inited = false;
 
         public override void OnServerStart()
         {
+            if (inited)
+            {
+                return;
+            }
             PlanetInfo.Init();
+            ServerTime.Init();
             foreach (string file in Directory.GetFiles(Path.Combine(Server.universeDirectory, "Vessels")))
             {
                 string croppedName = Path.GetFileNameWithoutExtension(file);
@@ -26,20 +32,28 @@ namespace VesselPositions
                     UpdateVessel(null, vesselID, vesselData);
                 }
             }
+            inited = true;
         }
 
         public override void OnUpdate()
         {
+            if (!inited)
+            {
+                return;
+            }
             long currentTime = DateTime.UtcNow.Ticks;
-            if (currentTime > lastSendTime + TimeSpan.TicksPerSecond)
+            if (currentTime > lastSendTime + (TimeSpan.TicksPerSecond / 1))
             {
                 lastSendTime = currentTime;
                 lock (vessels)
                 {
+                    double currentSubspaceTime = ServerTime.GetTime();
                     foreach (KeyValuePair<Guid, VesselInfo> kvp in vessels)
                     {
                         VesselInfo vi = kvp.Value;
-                        Console.WriteLine(kvp.Key + " velocity: " + vi.velocity + "");
+                        vi.Update(currentSubspaceTime);
+                        double[] posLLH = new double[] { vi.latitude, vi.longitude, vi.altitude };
+                        Console.WriteLine(kvp.Key + " Pos: " + Vector.GetString(posLLH, 2) + " velocity: " + vi.velocity.ToString("F1") + " time: " + currentSubspaceTime.ToString("F1"));
                     }
                 }
             }
@@ -47,6 +61,10 @@ namespace VesselPositions
 
         public override void OnMessageReceived(ClientObject client, ClientMessage messageData)
         {
+            if (!inited)
+            {
+                return;
+            }
             if (messageData.type == ClientMessageType.VESSEL_PROTO)
             {
                 using (MessageReader mr = new MessageReader(messageData.data))
@@ -99,14 +117,14 @@ namespace VesselPositions
             { 
                 ConfigNode cnOrbit = cn.GetNode("ORBIT");
                 double[] orbit = new double[7];
-                orbit[0] = double.Parse(cn.GetValue("INC"));
-                orbit[1] = double.Parse(cn.GetValue("ECC"));
-                orbit[2] = double.Parse(cn.GetValue("SMA"));
-                orbit[3] = double.Parse(cn.GetValue("LAN"));
-                orbit[4] = double.Parse(cn.GetValue("LPE"));
-                orbit[5] = double.Parse(cn.GetValue("MNA"));
-                orbit[6] = double.Parse(cn.GetValue("EPH"));
-                int referenceBody = Int32.Parse(cn.GetValue("REF"));
+                orbit[0] = double.Parse(cnOrbit.GetValue("INC"));
+                orbit[1] = double.Parse(cnOrbit.GetValue("ECC"));
+                orbit[2] = double.Parse(cnOrbit.GetValue("SMA"));
+                orbit[3] = double.Parse(cnOrbit.GetValue("LAN"));
+                orbit[4] = double.Parse(cnOrbit.GetValue("LPE"));
+                orbit[5] = double.Parse(cnOrbit.GetValue("MNA"));
+                orbit[6] = double.Parse(cnOrbit.GetValue("EPH"));
+                int referenceBody = Int32.Parse(cnOrbit.GetValue("REF"));
                 Orbit o = new Orbit(orbit, referenceBody);
                 vi.UpdateOrbit(o);
             }

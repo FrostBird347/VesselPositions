@@ -37,9 +37,14 @@ namespace VesselPositions
             double x2 = x * x;
             double y2 = y * y;
             double z2 = z * z;
-            this.altitude = Math.Sqrt(x2 + y2 + z2);
-            this.longitude = Math.Atan2(y, x);
-            this.latitude = Math.Acos(z / this.altitude);
+            this.altitude = Math.Sqrt(x2 + y2 + z2) - PlanetInfo.GetRadius(orbit.referenceBody);
+            double planetRotation = Constants.DEGREES_IN_RADIANS * PlanetInfo.GetRotation(orbit.referenceBody, orbit.epoch);
+            this.longitude = (360 + (Constants.DEGREES_IN_RADIANS * Math.Atan2(y, x)) - planetRotation) % 360;
+            if (this.longitude > 180)
+            {
+                this.longitude -= 360;
+            }
+            this.latitude = Constants.DEGREES_IN_RADIANS * Math.Asin(z / this.altitude);
             this.velocity = Vector.Length(orbit.velocity);
         }
 

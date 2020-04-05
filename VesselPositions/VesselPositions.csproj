@@ -52,6 +52,8 @@
     <Compile Include="VesselInfo.cs" />
     <Compile Include="PlanetInfo.cs" />
     <Compile Include="Vector.cs" />
+    <Compile Include="ServerTime.cs" />
+    <Compile Include="Constants.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

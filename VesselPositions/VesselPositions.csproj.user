@@ -4,5 +4,6 @@
     <StartAction>Program</StartAction>
     <StartProgram>..\External\DMPServer.exe</StartProgram>
     <ExternalConsole>true</ExternalConsole>
+    <ConsolePause>true</ConsolePause>
   </PropertyGroup>
 </Project>
