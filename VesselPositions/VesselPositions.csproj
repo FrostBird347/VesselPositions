@@ -27,20 +27,20 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="ConfigNode">
-      <HintPath>..\ConfigNode.dll</HintPath>
-    </Reference>
     <Reference Include="DarkMultiPlayer-Common">
-      <HintPath>..\DarkMultiPlayer-Common.dll</HintPath>
+      <HintPath>..\External\DarkMultiPlayer-Common.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="DMPServer">
-      <HintPath>..\DMPServer.exe</HintPath>
+      <HintPath>..\External\DMPServer.exe</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="MessageWriter2">
-      <HintPath>..\MessageWriter2.dll</HintPath>
+      <HintPath>..\External\MessageWriter2.dll</HintPath>
       <Private>False</Private>
+    </Reference>
+    <Reference Include="ConfigNode">
+      <HintPath>..\ConfigNode.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
