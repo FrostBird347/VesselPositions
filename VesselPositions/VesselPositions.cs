@@ -11,12 +11,73 @@ namespace VesselPositions
 {
     public class VesselPositions : DMPPlugin
     {
+        public string SharedPluginDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PluginData");
+        public string MapPluginFolder;
+        public string VesselPosFolder;
+        public string MapConfigFolder;
         private Dictionary<Guid, VesselInfo> vessels = new Dictionary<Guid, VesselInfo>();
         private long lastSendTime = 0;
+        public double UpdateFileSpeed = 1;
         private bool inited = false;
 
         public override void OnServerStart()
         {
+            if (!Directory.Exists(SharedPluginDirectory))
+            {
+                Directory.CreateDirectory(SharedPluginDirectory);
+            }
+            MapPluginFolder = SharedPluginDirectory + "/DMPServerMap-FrostBird347";
+            if (!Directory.Exists(MapPluginFolder))
+            {
+                Directory.CreateDirectory(MapPluginFolder);
+            }
+            VesselPosFolder = MapPluginFolder + "/VesselPos";
+            if (!Directory.Exists(VesselPosFolder))
+            {
+                Directory.CreateDirectory(VesselPosFolder);
+            }
+            MapConfigFolder = MapPluginFolder + "/Config";
+            if (!Directory.Exists(MapConfigFolder))
+            {
+                Directory.CreateDirectory(MapConfigFolder);
+            }
+            if (File.Exists(MapConfigFolder + "/VesselPos.txt"))
+            {
+                string UpdateSpeedReturn = GetConfigValue("UpdateSpeed");
+                if (UpdateSpeedReturn != "nil")
+                {
+                    UpdateFileSpeed = double.Parse(UpdateSpeedReturn, System.Globalization.CultureInfo.InvariantCulture);
+                }
+                else
+                {
+                    UpdateFileSpeed = 1;
+                    string OldConfigString = File.ReadAllText(MapConfigFolder + "/VesselPos.txt");
+                    string NewConfigString = OldConfigString + "\nUpdateSpeed = 1";
+                    byte[] NewConfigData = Encoding.Default.GetBytes(NewConfigString);
+                    File.WriteAllBytes(Path.Combine(MapConfigFolder + "/VesselPos.txt"), NewConfigData);
+                }
+            }
+            else
+            {
+                UpdateFileSpeed = 1;
+                string NewConfigString = "UpdateSpeed = 1";
+                byte[] NewConfigData = Encoding.Default.GetBytes(NewConfigString);
+                File.WriteAllBytes(Path.Combine(MapConfigFolder + "/VesselPos.txt"), NewConfigData);
+                Console.WriteLine("[ModdedVesselPositions] Created Config File");
+            }
+
+
+
+            string[] OutDatedFileList = Directory.GetFiles(VesselPosFolder);
+            foreach (string vesselFile in OutDatedFileList)
+            {
+                if (File.Exists(vesselFile))
+                {
+                    File.Delete(vesselFile);
+                }
+
+            }
+            DarkLog.Normal("[ModdedVesselPositions] Reset 'PluginData/DMPServerMap-FrostBird347/VesselPos'");
             if (inited)
             {
                 return;
@@ -42,8 +103,9 @@ namespace VesselPositions
                 return;
             }
             long currentTime = DateTime.UtcNow.Ticks;
-            if (currentTime > lastSendTime + (TimeSpan.TicksPerSecond / 1))
+            if (currentTime > lastSendTime + (TimeSpan.TicksPerSecond * UpdateFileSpeed))
             {
+                //Console.WriteLine("vessel update!");
                 lastSendTime = currentTime;
                 lock (vessels)
                 {
@@ -53,11 +115,41 @@ namespace VesselPositions
                         VesselInfo vi = kvp.Value;
                         vi.Update(currentSubspaceTime);
                         double[] posLLH = new double[] { vi.latitude, vi.longitude, vi.altitude };
-                        Console.WriteLine(kvp.Key + " Pos: " + Vector.GetString(posLLH, 2) + " velocity: " + vi.velocity.ToString("F1") + " time: " + currentSubspaceTime.ToString("F1"));
+                        //Console.WriteLine(kvp.Key + " Pos: " + Vector.GetString(posLLH, 2) + " velocity: " + vi.velocity.ToString("F1") + " time: " + currentSubspaceTime.ToString("F1"));
+                        string currentvesselDataString = "pid = " + kvp.Key + "\npos = " + Vector.GetString(posLLH, 2) + "\nvel = " + vi.velocity.ToString("F1") + "\ntime = " + currentSubspaceTime.ToString("F1");
+                        byte[] currentvesselData = Encoding.Default.GetBytes(currentvesselDataString);
+                        File.WriteAllBytes(Path.Combine(VesselPosFolder, kvp.Key + ".txt"), currentvesselData);
+
                     }
                 }
             }
         }
+
+
+        public string GetConfigValue(string Value)
+        {
+            string findvalue = Value + " =";
+            string FinalVesselValue = "nil";
+            bool foundvar = false;
+            string ConfigFile = MapConfigFolder + "/VesselPos.txt";
+            using (StreamReader sr = new StreamReader(ConfigFile))
+            {
+                string currentLine = sr.ReadLine();
+                while (currentLine != null && !foundvar)
+                {
+                    string trimmedLine = currentLine.Trim();
+                    if (trimmedLine.Trim().StartsWith(findvalue, StringComparison.Ordinal))
+                    {
+                        FinalVesselValue = trimmedLine.Substring(trimmedLine.IndexOf("=", StringComparison.Ordinal) + 2);
+                        foundvar = true;
+                    }
+                    currentLine = sr.ReadLine();
+                }
+            }
+            return FinalVesselValue;
+
+        }
+
 
         public override void OnMessageReceived(ClientObject client, ClientMessage messageData)
         {
@@ -133,6 +225,11 @@ namespace VesselPositions
         public void RemoveVessel(ClientObject client, Guid vesselID)
         {
             RemoveVesselInfo(vesselID);
+            string vesselFile = VesselPosFolder + "/" + vesselID + ".txt";
+            if (File.Exists(vesselFile))
+            {
+                File.Delete(vesselFile);
+            }
         }
 
         public void PositionVessel(ClientObject client, VesselUpdate update)
