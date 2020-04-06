@@ -66,8 +66,6 @@ namespace VesselPositions
                 Console.WriteLine("[ModdedVesselPositions] Created Config File");
             }
 
-
-
             string[] OutDatedFileList = Directory.GetFiles(VesselPosFolder);
             foreach (string vesselFile in OutDatedFileList)
             {
@@ -78,6 +76,7 @@ namespace VesselPositions
 
             }
             DarkLog.Normal("[ModdedVesselPositions] Reset 'PluginData/DMPServerMap-FrostBird347/VesselPos'");
+
             if (inited)
             {
                 return;
@@ -147,7 +146,6 @@ namespace VesselPositions
                 }
             }
             return FinalVesselValue;
-
         }
 
 
@@ -206,7 +204,7 @@ namespace VesselPositions
                 vi.UpdateLanded(newLat, newLong, newAlt, 0);
             }
             else
-            { 
+            {
                 ConfigNode cnOrbit = cn.GetNode("ORBIT");
                 double[] orbit = new double[7];
                 orbit[0] = double.Parse(cnOrbit.GetValue("INC"));
