@@ -54,6 +54,7 @@
     <Compile Include="Vector.cs" />
     <Compile Include="ServerTime.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="Config.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

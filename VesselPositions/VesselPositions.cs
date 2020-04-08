@@ -11,62 +11,28 @@ namespace VesselPositions
 {
     public class VesselPositions : DMPPlugin
     {
-        public string SharedPluginDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PluginData");
-        public string MapPluginFolder;
-        public string VesselPosFolder;
-        public string MapConfigFolder;
+        public static string SharedPluginDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PluginData");
+        public static string MapPluginFolder;
+        public static string VesselPosFolder;
+        public static string MapConfigFolder;
         private Dictionary<Guid, VesselInfo> vessels = new Dictionary<Guid, VesselInfo>();
         private long lastSendTime = 0;
-        public double UpdateFileSpeed = 1;
+        public static double UpdateFileSpeed = 1;
         private bool inited = false;
+
+        public void ReloadConfig(string input)
+        {
+            DarkLog.Normal("[ModdedVesselPositions] Reloading config...");
+            Config.SetupConfig();
+            DarkLog.Normal("[ModdedVesselPositions] Finished.");
+        }
 
         public override void OnServerStart()
         {
-            if (!Directory.Exists(SharedPluginDirectory))
-            {
-                Directory.CreateDirectory(SharedPluginDirectory);
-            }
-            MapPluginFolder = SharedPluginDirectory + "/DMPServerMap-FrostBird347";
-            if (!Directory.Exists(MapPluginFolder))
-            {
-                Directory.CreateDirectory(MapPluginFolder);
-            }
-            VesselPosFolder = MapPluginFolder + "/VesselPos";
-            if (!Directory.Exists(VesselPosFolder))
-            {
-                Directory.CreateDirectory(VesselPosFolder);
-            }
-            MapConfigFolder = MapPluginFolder + "/Config";
-            if (!Directory.Exists(MapConfigFolder))
-            {
-                Directory.CreateDirectory(MapConfigFolder);
-            }
-            if (File.Exists(MapConfigFolder + "/VesselPos.txt"))
-            {
-                string UpdateSpeedReturn = GetConfigValue("UpdateSpeed");
-                if (UpdateSpeedReturn != "nil")
-                {
-                    UpdateFileSpeed = double.Parse(UpdateSpeedReturn, System.Globalization.CultureInfo.InvariantCulture);
-                }
-                else
-                {
-                    UpdateFileSpeed = 1;
-                    string OldConfigString = File.ReadAllText(MapConfigFolder + "/VesselPos.txt");
-                    string NewConfigString = OldConfigString + "\nUpdateSpeed = 1";
-                    byte[] NewConfigData = Encoding.Default.GetBytes(NewConfigString);
-                    File.WriteAllBytes(Path.Combine(MapConfigFolder + "/VesselPos.txt"), NewConfigData);
-                }
-            }
-            else
-            {
-                UpdateFileSpeed = 1;
-                string NewConfigString = "UpdateSpeed = 1";
-                byte[] NewConfigData = Encoding.Default.GetBytes(NewConfigString);
-                File.WriteAllBytes(Path.Combine(MapConfigFolder + "/VesselPos.txt"), NewConfigData);
-                Console.WriteLine("[ModdedVesselPositions] Created Config File");
-            }
-
-            string[] OutDatedFileList = Directory.GetFiles(VesselPosFolder);
+            
+            DarkLog.Normal("[ModdedVesselPositions] Starting...");
+            Config.SetupConfig();
+            string[] OutDatedFileList = Directory.GetFiles(VesselPositions.VesselPosFolder);
             foreach (string vesselFile in OutDatedFileList)
             {
                 if (File.Exists(vesselFile))
@@ -75,8 +41,7 @@ namespace VesselPositions
                 }
 
             }
-            DarkLog.Normal("[ModdedVesselPositions] Reset 'PluginData/DMPServerMap-FrostBird347/VesselPos'");
-
+            DarkLog.Debug("[ModdedVesselPositions] Reset 'PluginData/DMPServerMap-FrostBird347/VesselPos'");
             if (inited)
             {
                 return;
@@ -93,6 +58,8 @@ namespace VesselPositions
                 }
             }
             inited = true;
+            DarkLog.Normal("[ModdedVesselPositions] Started!");
+            CommandHandler.RegisterCommand("reloadpos", ReloadConfig, "Reload the ModdedVesselPositions plugin config.");
         }
 
         public override void OnUpdate()
@@ -125,28 +92,7 @@ namespace VesselPositions
         }
 
 
-        public string GetConfigValue(string Value)
-        {
-            string findvalue = Value + " =";
-            string FinalVesselValue = "nil";
-            bool foundvar = false;
-            string ConfigFile = MapConfigFolder + "/VesselPos.txt";
-            using (StreamReader sr = new StreamReader(ConfigFile))
-            {
-                string currentLine = sr.ReadLine();
-                while (currentLine != null && !foundvar)
-                {
-                    string trimmedLine = currentLine.Trim();
-                    if (trimmedLine.Trim().StartsWith(findvalue, StringComparison.Ordinal))
-                    {
-                        FinalVesselValue = trimmedLine.Substring(trimmedLine.IndexOf("=", StringComparison.Ordinal) + 2);
-                        foundvar = true;
-                    }
-                    currentLine = sr.ReadLine();
-                }
-            }
-            return FinalVesselValue;
-        }
+        
 
 
         public override void OnMessageReceived(ClientObject client, ClientMessage messageData)

@@ -1,5 +1,7 @@
 ﻿using System;
 using DarkMultiPlayerServer;
+using VesselPositions;
+
 namespace VesselPositions
 {
     public class VesselInfo
