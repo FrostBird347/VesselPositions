@@ -79,10 +79,12 @@ namespace VesselPositions
                     foreach (KeyValuePair<Guid, VesselInfo> kvp in vessels)
                     {
                         VesselInfo vi = kvp.Value;
-                        vi.Update(currentSubspaceTime);
+						vi.Update(currentSubspaceTime + 1);
+						double[] NextposLLH = new double[] { vi.latitude, vi.longitude, vi.altitude };
+						vi.Update(currentSubspaceTime);
                         double[] posLLH = new double[] { vi.latitude, vi.longitude, vi.altitude };
                         //Console.WriteLine(kvp.Key + " Pos: " + Vector.GetString(posLLH, 2) + " velocity: " + vi.velocity.ToString("F1") + " time: " + currentSubspaceTime.ToString("F1"));
-                        string currentvesselDataString = "pid = " + kvp.Key + "\npos = " + Vector.GetString(posLLH, 2) + "\nvel = " + vi.velocity.ToString("F1") + "\ntime = " + currentSubspaceTime.ToString("F1");
+                        string currentvesselDataString = "pid = " + kvp.Key + "\npos = " + Vector.GetString(posLLH, 2) + "\nnextloc = " + Vector.GetString(NextposLLH, 2) + "\nvel = " + vi.velocity.ToString("F1") + "\ntime = " + currentSubspaceTime.ToString("F1");
                         byte[] currentvesselData = Encoding.Default.GetBytes(currentvesselDataString);
                         File.WriteAllBytes(Path.Combine(VesselPosFolder, kvp.Key + ".txt"), currentvesselData);
 
