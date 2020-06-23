@@ -55,6 +55,7 @@
     <Compile Include="ServerTime.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Config.cs" />
+    <Compile Include="PointTime.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

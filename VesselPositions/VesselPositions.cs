@@ -79,20 +79,21 @@ namespace VesselPositions
                     foreach (KeyValuePair<Guid, VesselInfo> kvp in vessels)
                     {
                         VesselInfo vi = kvp.Value;
-						vi.Update(currentSubspaceTime + 100);
+						vi.Update(PointTime.GetTime(currentSubspaceTime, 0));
 						double[] NextposLLH = new double[] { vi.latitude, vi.longitude, vi.altitude };
-						vi.Update(currentSubspaceTime + 250);
+						vi.Update(PointTime.GetTime(currentSubspaceTime, 250));
 						double[] NextposLLH2 = new double[] { vi.latitude, vi.longitude, vi.altitude };
-						vi.Update(currentSubspaceTime + 500);
+						vi.Update(PointTime.GetTime(currentSubspaceTime, 500));
 						double[] NextposLLH3 = new double[] { vi.latitude, vi.longitude, vi.altitude };
-						vi.Update(currentSubspaceTime + 750);
+						vi.Update(PointTime.GetTime(currentSubspaceTime, 750));
 						double[] NextposLLH4 = new double[] { vi.latitude, vi.longitude, vi.altitude };
-						vi.Update(currentSubspaceTime + 1000);
+						vi.Update(PointTime.GetTime(currentSubspaceTime, 1000));
 						double[] NextposLLH5 = new double[] { vi.latitude, vi.longitude, vi.altitude };
 						vi.Update(currentSubspaceTime);
+						Double TimePercent = PointTime.GetTimePercent(currentSubspaceTime);
                         double[] posLLH = new double[] { vi.latitude, vi.longitude, vi.altitude };
                         //Console.WriteLine(kvp.Key + " Pos: " + Vector.GetString(posLLH, 2) + " velocity: " + vi.velocity.ToString("F1") + " time: " + currentSubspaceTime.ToString("F1"));
-                        string currentvesselDataString = "pid = " + kvp.Key + "\npos = " + Vector.GetString(posLLH, 2) + "\nnextloc = " + Vector.GetString(NextposLLH, 2) + "\nnextloc2 = " + Vector.GetString(NextposLLH2, 2) + "\nnextloc3 = " + Vector.GetString(NextposLLH3, 2) + "\nnextloc4 = " + Vector.GetString(NextposLLH4, 2) + "\nnextloc5 = " + Vector.GetString(NextposLLH5, 2) + "\nvel = " + vi.velocity.ToString("F1") + "\ntime = " + currentSubspaceTime.ToString("F1");
+                        string currentvesselDataString = "pid = " + kvp.Key + "\npos = " + Vector.GetString(posLLH, 2) + "\nnextloc = " + Vector.GetString(NextposLLH, 2) + "\nnextloc2 = " + Vector.GetString(NextposLLH2, 2) + "\nnextloc3 = " + Vector.GetString(NextposLLH3, 2) + "\nnextloc4 = " + Vector.GetString(NextposLLH4, 2) + "\nnextloc5 = " + Vector.GetString(NextposLLH5, 2) + "\nvel = " + vi.velocity.ToString("F1") + "\ntime = " + currentSubspaceTime.ToString("F1") + "\ntimep = " + TimePercent.ToString("F1");
                         byte[] currentvesselData = Encoding.Default.GetBytes(currentvesselDataString);
                         File.WriteAllBytes(Path.Combine(VesselPosFolder, kvp.Key + ".txt"), currentvesselData);
 
