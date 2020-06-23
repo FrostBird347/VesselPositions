@@ -10,8 +10,9 @@ using MessageStream2;
 namespace VesselPositions
 {
     public class VesselPositions : DMPPlugin
-    {
-        public static string SharedPluginDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PluginData");
+	{
+		public static string PluginV = "2";
+		public static string SharedPluginDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PluginData");
         public static string MapPluginFolder;
         public static string VesselPosFolder;
         public static string MapConfigFolder;
@@ -20,7 +21,7 @@ namespace VesselPositions
         public static double UpdateFileSpeed = 1;
         private bool inited = false;
 
-        public void ReloadConfig(string input)
+		public void ReloadConfig(string input)
         {
             DarkLog.Normal("[ModdedVesselPositions] Reloading config...");
             Config.SetupConfig();
@@ -58,7 +59,7 @@ namespace VesselPositions
                 }
             }
             inited = true;
-            DarkLog.Normal("[ModdedVesselPositions] Started!");
+            DarkLog.Normal("[ModdedVesselPositions] Started! - Version " + PluginV +".");
             CommandHandler.RegisterCommand("reloadpos", ReloadConfig, "Reload the ModdedVesselPositions plugin config.");
         }
 
